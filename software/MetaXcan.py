@@ -35,8 +35,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='MetaXcan.py %s:  Will estimate MetaXcan results from a set of snp covariance matrices, a model database, and GWAS beta files.' % (__version__))
 
 #weight db model
-    parser.add_argument("--model_db_path", help="name of model db in data folder")
+    parser.add_argument("--model_db_path", help="path to model file")
     parser.add_argument("--model_db_snp_key", help="Specify a key to use as snp_id")
+
 #GWAS betas
     parser.add_argument("--gwas_file", help="Load a single GWAS file. (Alternative to providing a gwas_folder and gwas_file_pattern)")
 

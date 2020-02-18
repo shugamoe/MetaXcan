@@ -77,9 +77,9 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='M04_zscores.py %s: Build ZScores from GWAS data.' % (__version__,))
 
-    parser.add_argument("--model_db_path", help="name of weight db in data folder")
+    parser.add_argument("--model_db_path", help="path to model file")
     parser.add_argument("--model_db_snp_key", help="Specify a key to use as snp_id")
-    parser.add_argument("--covariance", help="name of file containing covariance data")
+    parser.add_argument("--covariance", help="path to file containing covariance data")
     parser.add_argument("--stream_covariance", help="Option to better handle large covariances, slower but less memory consuming", action="store_true")
     parser.add_argument("--beta_folder", help="name of folder containing GWAS effect data")
     parser.add_argument("--output_file", help="name of output file")

@@ -183,7 +183,7 @@ def context_from_args(args):
             intersection = KeyedDataSource.load_data_column(args.cleared_snps, "rsid")
             intersection = set(intersection)
         else:
-            intersection = GWASAndModels.gwas_model_intersection(args)
+            intersection = GWASAndModels.gwas_models_intersection_from_args(args)
 
         if len(intersection) == 0:
             raise Exceptions.ReportableException("No intersection of snps between GWAS and models.")

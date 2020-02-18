@@ -153,7 +153,7 @@ def _get(data, key, whitelist=None, strict_whitelist=True):
     covariance_matrix = _to_matrix(entries, snps)
     return snps, covariance_matrix
 
-def _rows_to_entries(d, key, whitelist):
+def _rows_to_entries(d, key, whitelist=None):
     entries = {}
     _i = set()
     ids = []
@@ -213,6 +213,26 @@ def _to_matrix(entries, keys_i, keys_j=None):
         rows.append(row)
         for key_j in keys_j:
             row.append(entries[key_i][key_j])
+    matrix = numpy.matrix(rows, dtype=numpy.float64)
+    return matrix
+
+def _to_matrix_2(entries, keys_i, keys_j=None):
+    if not keys_j: keys_j = keys_i
+    rows = []
+    for key_i in keys_i:
+        row = []
+        rows.append(row)
+        for key_j in keys_j:
+            if key_i in entries:
+                if key_j in entries[key_i]:
+                    row.append(entries[key_i][key_j])
+                else:
+                    row.append(0)
+            else:
+                if key_i in entries[key_j]:
+                    row.append(entries[key_j][key_i])
+                else:
+                    row.append(0)
     matrix = numpy.matrix(rows, dtype=numpy.float64)
     return matrix
 

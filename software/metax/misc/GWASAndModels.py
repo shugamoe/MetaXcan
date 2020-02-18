@@ -32,7 +32,16 @@ def align_data_to_alleles(data, base, left_on, right_on):
 
     return merged
 
-def gwas_model_intersection(args):
+def model_and_intersection_with_gwas_from_args(args):
+    gwas= GWASUtilities.load_plain_gwas_from_args(args)
+    PF = PredictionModel.WDBQF
+    logging.log(9, "loading %s", args.model_db_path)
+    model = PredictionModel.load_model(args.model_db_path, args.model_db_snp_key)
+    base = model.weights[[PF.K_RSID, PF.K_EFFECT_ALLELE, PF.K_NON_EFFECT_ALLELE]].drop_duplicates()
+    b = align_data_to_alleles(gwas, base, Constants.SNP, PF.K_RSID)
+    return model, set(b[Constants.SNP])
+
+def gwas_models_intersection_from_args(args):
     gwas= GWASUtilities.load_plain_gwas_from_args(args)
     paths = PredictionModel._model_paths(args.models_folder, args.models_name_filter)
     PF = PredictionModel.WDBQF
