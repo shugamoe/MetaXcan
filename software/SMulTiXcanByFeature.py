@@ -12,7 +12,7 @@ from metax.misc import GWASAndModels, Math
 from metax.gwas import Utilities as GWASUtilities
 from metax.cross_model import Utilities as SMultiXcanUtilities
 
-def get_group(args):
+def get_group(args, entry_whitelist=None):
     groups = {}
     keys = []
     if len(args.grouping) < 2 or args.grouping[1] != "GTEx_sQTL":
@@ -23,6 +23,9 @@ def get_group(args):
         comps = g.strip().split()
         group = comps[1]
         entry = comps[2]
+        if entry_whitelist and entry not in entry_whitelist:
+            continue
+
         if not group in groups:
             groups[group] =[]
             keys.append(group)
@@ -120,12 +123,12 @@ def run(args):
 
     cutoff = SMultiXcanUtilities._cutoff(args)
 
-    logging.info("Acquiring groups")
-    group_keys, groups = get_group(args)
-
     logging.info("Acquiring gwas-variant intersection")
     model, intersection = GWASAndModels.model_and_intersection_with_gwas_from_args(args)
     model_structure = build_model_structure(model, intersection)
+
+    logging.info("Acquiring groups")
+    group_keys, groups = get_group(args, set(model_structure.keys()))
 
     logging.info("Acquiring covariance source")
     covariance_source = get_covariance_source(args.covariance, intersection)
@@ -133,8 +136,11 @@ def run(args):
     logging.info("Acquiring associations")
     associations = get_associations(args)
 
+    reporter = Utilities.PercentReporter(logging.INFO, len(group_keys))
+
     results = []
     for i,group_name in enumerate(group_keys):
+        reporter.update(i+1, "processed %d %% groups")
         if args.MAX_M and  i>args.MAX_M-1:
             logging.info("Early abort")
             break
