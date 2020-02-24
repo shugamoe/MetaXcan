@@ -140,7 +140,7 @@ def run(args):
 
     results = []
     for i,group_name in enumerate(group_keys):
-        reporter.update(i+1, "processed %d %% groups")
+        reporter.update(i+1, "processed %d %% of groups")
         if args.MAX_M and  i>args.MAX_M-1:
             logging.info("Early abort")
             break
