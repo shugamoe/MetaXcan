@@ -6,110 +6,11 @@ from scipy import stats
 from timeit import default_timer as timer
 
 from metax import Utilities, Logging
-from metax import Exceptions
-from metax import MatrixManager
+from metax.cross_model import JointAnalysis2
 from metax.misc import GWASAndModels, Math
 from metax.gwas import Utilities as GWASUtilities
 from metax.cross_model import Utilities as SMultiXcanUtilities
 
-def get_group(args, entry_whitelist=None):
-    groups = {}
-    keys = []
-    if len(args.grouping) < 2 or args.grouping[1] != "GTEx_sQTL":
-        raise  Exceptions.InvalidArguments("Unsupported grouping options")
-
-    lines = Utilities.generate_from_any_plain_file(args.grouping[0], skip_n =1)
-    for i,g in enumerate(lines):
-        comps = g.strip().split()
-        group = comps[1]
-        entry = comps[2]
-        if entry_whitelist and entry not in entry_whitelist:
-            continue
-
-        if not group in groups:
-            groups[group] =[]
-            keys.append(group)
-        groups[group].append(entry)
-
-    return keys, groups
-
-def get_covariance_source(path, whitelist=None):
-    covariance_source = {}
-    lines = Utilities.generate_from_any_plain_file(path, skip_n=1)
-    for l in lines:
-        comps = l.strip().split()
-        r1 = comps[1]
-        r2 = comps[2]
-
-        if whitelist and (r1 not in whitelist or r2 not in whitelist):
-            continue
-
-        v = comps[3]
-        if not r1 in covariance_source:
-            covariance_source[r1] = {}
-        if not r2 in covariance_source[r1]:
-            covariance_source[r2] = {}
-        covariance_source[r1][r2] = float(v)
-    return covariance_source
-
-def get_associations(args):
-    associations = {}
-
-    if len(args.associations) < 2 or args.associations[1] != "SPrediXcan":
-        raise Exceptions.InvalidArguments("Unsupported association options")
-
-    lines = Utilities.generate_from_any_plain_file(args.associations[0], skip_n=1)
-    for l in lines:
-        comps = l.strip().split(",")
-        entry = comps[0]
-        association = comps[2]
-        if association != "NA":
-            associations[entry] = float(association)
-
-    return associations
-
-def build_model_structure(model, whitelist=None):
-    structure = {}
-    for t in model.weights.itertuples():
-        if whitelist and t.rsid not in whitelist:
-            continue
-        if t.gene not in structure:
-            structure[t.gene] = {}
-        structure[t.gene][t.rsid] = t.weight
-    return structure
-
-def get_features_and_variants(group, model_structure):
-    variants = set()
-    features = set()
-    for feature in group:
-        if feature in model_structure:
-            variants.update(model_structure[feature].keys())
-            features.add(feature)
-    return features, variants
-
-def get_weight_matrix(model_structure, features_, variants_):
-    matrix = []
-    for feature in features_:
-        model = model_structure[feature]
-        w = []
-        for variant in variants_:
-            if variant in model:
-                w.append(model[variant])
-            else:
-                w.append(0)
-        matrix.append(w)
-    return numpy.matrix(matrix, dtype=numpy.float64)
-
-def get_transcriptome_correlation(covariance_source, model_structure, features, variants):
-    variants_ = sorted(variants)
-    features_ = sorted(features)
-    genotype_covariance = MatrixManager._to_matrix_2(covariance_source, variants_)
-    weight = get_weight_matrix(model_structure, features_, variants_)
-    transcriptome_covariance = numpy.dot(numpy.dot(weight, genotype_covariance), weight.T)
-    variances = numpy.diag(transcriptome_covariance)
-    normalization = numpy.sqrt(numpy.outer(variances, variances))
-    transcriptome_correlation = numpy.divide(transcriptome_covariance, normalization)
-    return features_, variants_, transcriptome_correlation
 
 ########################################################################################################################
 
@@ -125,16 +26,16 @@ def run(args):
 
     logging.info("Acquiring gwas-variant intersection")
     model, intersection = GWASAndModels.model_and_intersection_with_gwas_from_args(args)
-    model_structure = build_model_structure(model, intersection)
+    model_structure = JointAnalysis2.build_model_structure(model, intersection)
 
     logging.info("Acquiring groups")
-    group_keys, groups = get_group(args, set(model_structure.keys()))
+    group_keys, groups = JointAnalysis2.get_group(args, set(model_structure.keys()))
 
     logging.info("Acquiring covariance source")
-    covariance_source = get_covariance_source(args.covariance, intersection)
+    covariance_source = JointAnalysis2.get_covariance_source(args.covariance, intersection)
 
     logging.info("Acquiring associations")
-    associations = get_associations(args)
+    associations = JointAnalysis2.get_associations(args)
 
     reporter = Utilities.PercentReporter(logging.INFO, len(group_keys))
 
@@ -150,11 +51,11 @@ def run(args):
         try:
             group = [x for x in groups[group_name] if x in associations]
 
-            features, variants = get_features_and_variants(group, model_structure)
+            features, variants = JointAnalysis2.get_features_and_variants(group, model_structure)
             if not features or not variants:
                 continue
             n_features, n_variants = len(features), len(variants)
-            features_, variants_, transcriptome_correlation = get_transcriptome_correlation(covariance_source, model_structure, features, variants)
+            features_, variants_, transcriptome_correlation = JointAnalysis2.get_transcriptome_correlation(covariance_source, model_structure, features, variants)
 
             zscores = numpy.array([associations[x] for x in features_], dtype=numpy.float64)
             cutoff_ = cutoff(transcriptome_correlation)
@@ -173,7 +74,7 @@ def run(args):
     Utilities.save_dataframe(results, args.output)
 
     end = timer()
-    logging.info("Successfully processes grouped SMultiXcan in %s seconds" % (str(end - start)))
+    logging.info("Successfully processed grouped SMultiXcan in %s seconds" % (str(end - start)))
 
 if __name__ == "__main__":
     import  argparse

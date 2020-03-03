@@ -10,22 +10,23 @@ def try_parse(string, fail=None):
     except Exception:
         return fail;
 
-def load_data(path, key_name, value_name, white_list=None, numeric=True):
+def load_data(path, key_name, value_name, white_list=None, numeric=True, sep=None):
     def _ogz(p):
         return  io.TextIOWrapper(gzip.open(p, "r"), newline="")
     _o = _ogz if ".gz" in path else open
     data = {}
     c_key=None
     c_value=None
+
     with _o(path) as file:
         for i, line in enumerate(file):
             if i==0:
-                header = line.strip().split()
+                header = line.strip().split(sep)
                 c_key = header.index(key_name)
                 c_value = header.index(value_name)
                 continue
 
-            comps = line.strip().split()
+            comps = line.strip().split(sep)
             key = comps[c_key]
             if white_list:
                 if not key in white_list:
