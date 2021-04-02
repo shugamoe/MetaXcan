@@ -210,6 +210,7 @@ def _prepare_phenotype(context):
 def _pheno_from_file_and_column(path, column, na_rep=None, indices_file=None):
     if indices_file:
         indices_keep = list(pandas.read_table(indices_file, header=None)[0]) + [0] # Keep header
+        logging.info("Using subset of covariates.")
         x = pandas.read_table(path, usecols=[column], sep="\s+", na_values=na_rep,
                               skiprows=lambda x: x not in indices_keep)
     else:
@@ -224,6 +225,7 @@ def _pheno_from_file_and_column(path, column, na_rep=None, indices_file=None):
 def _get_covariates(args):
     if args.indices_file:
         indices_keep = list(pandas.read_table(args.indices_file, header=None)[0]) + [0] # Keep header
+        logging.info("Using subset of pheno.")
         covariates = pandas.read_table(args.covariates_file, sep="\s+",
                                        skiprows=lambda x: x not in indices_keep)[args.covariates]
     else:

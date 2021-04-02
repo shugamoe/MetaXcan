@@ -125,6 +125,7 @@ class Expression(Expression.Expression):
     def enter(self):
         if self.indices:
             indices_keep = list(pandas.read_table(self.indices, header=None)[0]) + [0] # Keep header
+            logging.info("Using subset of expression data.")
             self.d = pandas.read_table(self.path,
                                        skiprows = lambda x: x not in indices_keep)
         else:
