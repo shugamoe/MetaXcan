@@ -124,7 +124,7 @@ class Expression(Expression.Expression):
 
     def enter(self):
         if self.indices:
-            indices_keep = list(pd.read_table(self.indices, header=None)[0])
+            indices_keep = list(pandas.read_table(self.indices, header=None)[0])
             self.d = pandas.read_table(self.path,
                                        skiprows = lambda x: x not in indices_keep)
         else:
