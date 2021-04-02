@@ -54,6 +54,8 @@ def add_arguments(parser):
     parser.add_argument('--covariates', type=str, nargs='+', help='Names of covariates in the file', default=[])
     parser.add_argument('--covariates_file',
                         help="Text file (or gzip-compressed) with covariate data. If provided, will force OLS regression")
+    parser.add_argument("--indices_file", type=str, default=None,
+                        help="Text file, one column, no header, with 0-based indices of individuals to use for association.")
     parser.add_argument("--input_phenos_column", help="Name of column from input file to be used as phenotype")
     parser.add_argument("--input_phenos_na_values", help="scalar value to be interpreted as 'NA' in the phenotype", nargs="+")
     parser.add_argument("--output", help="File where stuff will be saved.")

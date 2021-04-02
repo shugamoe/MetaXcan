@@ -172,7 +172,7 @@ def expression_from_args(args, prediction_results = None):
         expression = HDF5Expression.Expression(args.hdf5_expression_file)
     elif args.expression_file:
         logging.info("Preparing PrediXcan context")
-        expression = PlainTextExpression.Expression(args.expression_file)
+        expression = PlainTextExpression.Expression(args.expression_file, args.indices_file)
     else:
         raise RuntimeError("Could not build context from arguments")
     return expression
@@ -187,7 +187,10 @@ def p_context_from_args(args, prediction_results=None):
 
 def _prepare_phenotype(context):
     logging.info("Accquiring phenotype")
-    context.pheno = _pheno_from_file_and_column(context.args.input_phenos_file, context.args.input_phenos_column, context.args.input_phenos_na_values)
+    context.pheno = _pheno_from_file_and_column(context.args.input_phenos_file, 
+                                                context.args.input_phenos_column,
+                                                context.args.input_phenos_na_values,
+                                                context.args.indices_file)
     if context.args.mode == MTPMode.K_LOGISTIC:
         try:
             v = set([str(float(x)) for x in context.pheno])
@@ -204,8 +207,13 @@ def _prepare_phenotype(context):
         logging.info("Replacing phenotype with residuals")
         context.pheno = _get_residual(context.pheno, context.covariates)
 
-def _pheno_from_file_and_column(path, column, na_rep=None):
-    x = pandas.read_table(path, usecols=[column], sep="\s+", na_values=na_rep)
+def _pheno_from_file_and_column(path, column, na_rep=None, indices_file=None):
+    if indices_file:
+        indices_keep = list(pd.read_table(self.indices, header=None)[0]) 
+        x = pandas.read_table(path, usecols=[column], sep="\s+", na_values=na_rep,
+                              skiprows=lambda x: x not in indices_keep)
+    else:
+        x = pandas.read_table(path, usecols=[column], sep="\s+", na_values=na_rep)
     p = x[column]
     if not na_rep:
         # Default UKB NA is represented as -999
@@ -214,7 +222,12 @@ def _pheno_from_file_and_column(path, column, na_rep=None):
     return p
 
 def _get_covariates(args):
-    covariates = pandas.read_table(args.covariates_file, sep="\s+")[args.covariates]
+    if args.indices_file:
+        indices_keep = list(pd.read_table(self.indices, header=None)[0]) 
+        covariates = pandas.read_table(args.covariates_file, sep="\s+",
+                                       skiprows=lambda x: x not in indices_keep)[args.covariates]
+    else:
+        covariates = pandas.read_table(args.covariates_file, sep="\s+")[args.covariates]
     columns = covariates.columns.values
     for c in columns:
         covariates.loc[ numpy.isclose(covariates[c], -999.0, atol=1e-3, rtol=0), c] = numpy.nan

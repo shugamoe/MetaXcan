@@ -110,9 +110,10 @@ def _structure(folder, pattern=None):
 ########################################################################################################################
 
 class Expression(Expression.Expression):
-    def __init__(self, path):
+    def __init__(self, path, indices_path=None):
         self.path = path
         self.d = None
+        self.indices = indices_path
 
     def expression_for_gene(self, gene):
         k = self.d[gene].values
@@ -122,7 +123,12 @@ class Expression(Expression.Expression):
         return self.d.columns.values
 
     def enter(self):
-        self.d = pandas.read_table(self.path)
+        if self.indices:
+            indices_keep = list(pd.read_table(self.indices, header=None)[0])
+            self.d = pandas.read_table(self.path,
+                                       skiprows = lambda x: x not in indices_keep)
+        else:
+            self.d = pandas.read_table(self.path)
         if "FID" in self.d:
             self.d = self.d.drop(["FID", "IID"], axis = 1)
 
