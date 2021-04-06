@@ -83,3 +83,4 @@ if __name__ == "__main__":
             logging.error(e.msg)
         except Exception as e:
             logging.info("Unexpected error: %s" % str(e))
+            logging.info("Unexpected error: %s" % str(e.msg))

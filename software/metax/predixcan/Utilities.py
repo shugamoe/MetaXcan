@@ -236,17 +236,22 @@ def _get_covariates(args):
     return covariates
 
 def _get_residual(pheno, covariates):
+    logging.info("Getting covariates.")
     e = pandas.DataFrame(covariates)
+    logging.info("Create order/pheno columns")
     e["order"] = range(0, e.shape[0])
     e["pheno"] = pheno
 
+    logging.info("Drop NA")
     e_ = e.dropna()
     e_ = e_[e_.columns[~(e_ == 0).all()]]
 
+    logging.info("Keys")
     keys = list(e_.columns.values)
     keys.remove("pheno")
     keys.remove("order")
 
+    logging.info("Fitting model")
     y, X = dmatrices("pheno ~ {}".format(" + ".join(keys)), data=e_, return_type="dataframe")
     model = sm.OLS(y,X)
     result = model.fit()
