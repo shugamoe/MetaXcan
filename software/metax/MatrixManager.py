@@ -214,9 +214,6 @@ def _to_matrix(entries, keys_i, keys_j=None):
         for key_j in keys_j:
             row.append(entries[key_i][key_j])
     matrix = numpy.matrix(rows, dtype=numpy.float64)
-    def is_symmetric(a, rtol=1e-05, atol=1e-08):
-        return numpy.allclose(a, a.T, rtol=rtol, atol=atol)
-    is_sym = is_symmetric(matrix)
     return matrix
 
 def _to_matrix_2(entries, keys_i, keys_j=None):
