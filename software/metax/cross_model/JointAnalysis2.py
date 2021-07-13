@@ -14,6 +14,16 @@ def get_group(args, entry_whitelist=None):
         comps = g.strip().split()
         group = comps[1]
         entry = comps[2]
+        
+	# In multi-tissue context, entry will have the form:
+	# <tissue_name>.intron_<chr>_<spos>_<epos>
+        # However, the entry_whitelist still has introns without
+	# the <tissue_name>. prefix, so let's check for the existence of a .
+	# and only take the intron without the tissue when checking the whitelist.
+        # if "." in entry:
+            # entry_no_tiss = entry.split(".")[1]
+        # else: 
+            # entry_no_tiss = entry
         if entry_whitelist and entry not in entry_whitelist:
             continue
 
@@ -39,7 +49,8 @@ def get_covariance_source(path, whitelist=None):
         v = comps[3]
         if not r1 in covariance_source:
             covariance_source[r1] = {}
-        if not r2 in covariance_source[r1]:
+        # if not r2 in covariance_source[r1]: # This version of the line can remove covariances. . .
+        if not r2 in covariance_source:
             covariance_source[r2] = {}
         covariance_source[r1][r2] = float(v)
     return covariance_source
@@ -65,7 +76,13 @@ def get_associations(args):
 def build_model_structure(model, whitelist=None):
     structure = {}
     for t in model.weights.itertuples():
-        if whitelist and t.rsid not in whitelist:
+
+        if "." in t.rsid:
+            rsid_no_tiss = t.rsid.split(".")[1]
+        else:
+            rsid_no_tiss = t.rsid
+
+        if whitelist and rsid_no_tiss not in whitelist:
             continue
         if t.gene not in structure:
             structure[t.gene] = {}

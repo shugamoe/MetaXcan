@@ -214,9 +214,13 @@ def _to_matrix(entries, keys_i, keys_j=None):
         for key_j in keys_j:
             row.append(entries[key_i][key_j])
     matrix = numpy.matrix(rows, dtype=numpy.float64)
+    def is_symmetric(a, rtol=1e-05, atol=1e-08):
+        return numpy.allclose(a, a.T, rtol=rtol, atol=atol)
+    is_sym = is_symmetric(matrix)
     return matrix
 
 def _to_matrix_2(entries, keys_i, keys_j=None):
+    if "." in keys_i[0]: keys_i = [x.split(".")[1] for x in keys_i]
     if not keys_j: keys_j = keys_i
     rows = []
     for key_i in keys_i:
@@ -226,6 +230,9 @@ def _to_matrix_2(entries, keys_i, keys_j=None):
             if key_i in entries:
                 if key_j in entries[key_i]:
                     row.append(entries[key_i][key_j])
+                # Without this elif can make covar matrices non-sym
+                elif key_i in entries[key_j]:
+                    row.append(entries[key_j][key_i])
                 else:
                     row.append(0)
             else:

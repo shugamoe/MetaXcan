@@ -27,7 +27,8 @@ def run(args):
     all_snps = model_manager.get_rsids()
     Utilities.ensure_requisite_folders(args.snp_covariance_output)
     with gzip.open(args.snp_covariance_output, "w") as o:
-        o.write("GENE\tRSID1\tRSID2\tVALUE\n")
+        hdr = "GENE\tRSID1\tRSID2\tVALUE\n"
+        o.write(bytes(hdr, 'utf-8'))
         logging.info("processing genotype")
 
         for chromosome, metadata, dosage in GenotypeUtilities.genotype_by_chromosome_from_args(args, all_snps):
@@ -43,7 +44,7 @@ def run(args):
                 cov_data = MatrixManager._flatten_matrix_data([cov_data])
                 for e in cov_data:
                     l = "{}\t{}\t{}\t{}\n".format(e[0], e[1], e[2], e[3])
-                    o.write(l)
+                    o.write(bytes(l, 'utf-8'))
 
                 reporter.update(i, "%d %% of genes processed so far in chromosome "+str(chromosome))
 
@@ -72,6 +73,7 @@ if __name__ == "__main__":
     parser.add_argument("--verbosity", help="Log verbosity level. 1 is everything being logged. 10 is only high level messages, above 10 will hardly log anything", default = "10")
     parser.add_argument("--impute_to_mean", help="Dosages might have missing values; impute missing to the mean", action="store_true")
     parser.add_argument("--throw", action="store_true", help="Throw exception on error", default=False)
+    parser.add_argument("--member_file", help="Path to tsv with gtex member ids in column 'indv_id'. Use to specify tissue membership.")
 
     args = parser.parse_args()
 

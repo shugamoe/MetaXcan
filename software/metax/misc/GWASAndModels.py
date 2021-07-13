@@ -38,7 +38,16 @@ def model_and_intersection_with_gwas_from_args(args):
     logging.log(9, "loading %s", args.model_db_path)
     model = PredictionModel.load_model(args.model_db_path, args.model_db_snp_key)
     base = model.weights[[PF.K_RSID, PF.K_EFFECT_ALLELE, PF.K_NON_EFFECT_ALLELE]].drop_duplicates()
-    b = align_data_to_alleles(gwas, base, Constants.SNP, PF.K_RSID)
+
+    # Multi-Tissue IntronXCan has the db file with rsids of the form:
+    # <tissue_name_.<SNP_info>
+    # gwas file will only have <SNP_info> so we create and use a separate rsid
+    # column with only snpinfo in it.
+    if "." in base['rsid'][0]:
+        base['rsid_no_tiss'] = base['rsid'].str.split(".", expand=True)[1]
+        b = align_data_to_alleles(gwas, base, Constants.SNP, 'rsid_no_tiss')
+    else:
+        b = align_data_to_alleles(gwas, base, Constants.SNP, PF.K_RSID)
     return model, set(b[Constants.SNP])
 
 def gwas_models_intersection_from_args(args):

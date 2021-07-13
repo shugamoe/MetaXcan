@@ -18,7 +18,9 @@ def gtex_geno_header(gtex_file):
         header = file.readline().strip().split()
     return header
 
-def gtex_geno_lines(gtex_file, gtex_snp_file, snps=None, gtex_release_version=None, impute_to_mean=False):
+def gtex_geno_lines(gtex_file, gtex_snp_file, snps=None, gtex_release_version=None, impute_to_mean=False,
+                    member_file=None):
+
     logging.log(9, "Loading GTEx snp file")
     #TODO: change to something more flexible to support V7 naming
 
@@ -26,9 +28,34 @@ def gtex_geno_lines(gtex_file, gtex_snp_file, snps=None, gtex_release_version=No
 
     logging.log(9, "Processing GTEx geno")
     with io.TextIOWrapper(gzip.open(gtex_file, "r"), newline="") as file:
+            
         for i,line in enumerate(file):
-            if i==0:continue #skip header. This line is not needed but for conceptual ease of mind
-            comps = line.strip().split()
+            if i==0:
+                if member_file is not None:
+                    import pandas as pd
+                    # Always want varID column from header
+                    col_list = ['varID'] + list(pd.read_csv(member_file, sep="\t")['indv_id']) 
+                else:
+                    col_list = line.strip().split()
+
+                def filter_members(gtex_id):
+                    if gtex_id in col_list:
+                        return True
+                    else:
+                        return False
+
+                header = line.strip().split()
+                col_mask = list(map(filter_members, header))
+
+                og_num_members = len(header) - 1 
+                cur_num_members = sum(col_mask) - 1
+                
+                if og_num_members != cur_num_members: 
+                    logging.log(9, "Filtered # of members from {} -> {} ".format(og_num_members, cur_num_members))
+                continue #skip header. This line is not needed but for conceptual ease of mind
+
+            comps = numpy.array(line.strip().split())[col_mask].tolist()
+            assert len(comps) == cur_num_members + 1
             variant = comps[0]
 
             if not variant in gtex_snp:
@@ -50,7 +77,7 @@ def gtex_geno_lines(gtex_file, gtex_snp_file, snps=None, gtex_release_version=No
 
             yield [rsid] + data + [frequency] + list(dosage)
 
-def gtex_geno_by_chromosome(gtex_file, gtex_snp_file, snps=None, gtex_release_version=None, impute_to_mean=False):
+def gtex_geno_by_chromosome(gtex_file, gtex_snp_file, snps=None, gtex_release_version=None, impute_to_mean=False,member_file=None):
     buffer = []
     last_chr = None
 
@@ -81,7 +108,7 @@ def gtex_geno_by_chromosome(gtex_file, gtex_snp_file, snps=None, gtex_release_ve
         return chromosome, metadata, dosage_data
 
     logging.log(8, "Starting to process lines")
-    for line in gtex_geno_lines(gtex_file, gtex_snp_file, snps, gtex_release_version, impute_to_mean):
+    for line in gtex_geno_lines(gtex_file, gtex_snp_file, snps, gtex_release_version, impute_to_mean, member_file):
 
         chromosome = line[GF.CHROMOSOME]
         if last_chr is None: last_chr = chromosome
