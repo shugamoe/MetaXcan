@@ -15,7 +15,7 @@ def run(args):
         return
 
     logging.info("Loading associations")
-    associations = KeyedDataSource.load_data(args.associations[0], "gene", "pvalue", sep=",")
+    associations = KeyedDataSource.load_data(args.associations[0], "gene", "pvalue", float128=True, sep=",")
 
     logging.info("Loading groups")
     group_keys, groups = JointAnalysis2.get_group(args)
@@ -24,14 +24,14 @@ def run(args):
     logging.info("Processing")
     for key in group_keys:
         group = [x for x in groups[key] if x in associations]
-        p = numpy.array([associations[x] for x in group if associations[x] != "NA" and not numpy.isnan(associations[x])], dtype=numpy.float)
+        p = numpy.array([associations[x] for x in group if associations[x] != "NA" and not numpy.isnan(associations[x])], dtype=numpy.float128)
         if len(p) == 0:
             continue
         s = numpy.sum(numpy.tan((0.5 - p) * numpy.pi))
-        acat = 0.5 - math.atan(s/p.shape[0])/numpy.pi
+        acat = 0.5 - numpy.arctan(s/p.shape[0])/numpy.pi
         r.append((key, acat, len(group), len(p)))
 
-    r = pandas.DataFrame(r, columns=["group", "acat", "group_size", "available_results"])
+    r = pandas.DataFrame(r, columns=["group", "acat", "group_size", "available_results"], dtype=str)
     r = r.sort_values(by="acat")
     logging.info("Saving results")
     Utilities.save_dataframe(r, args.output)

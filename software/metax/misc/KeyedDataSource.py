@@ -1,14 +1,21 @@
 import gzip
 import io
 import pandas
+import numpy as np
 
 from .. import Utilities
 
-def try_parse(string, fail=None):
-    try:
-        return float(string)
-    except Exception:
-        return fail;
+def try_parse(string, fail=None, float128=False):
+    if not float128:
+        try:
+            return float(string)
+        except Exception:
+            return fail;
+    else:
+        try:
+            return np.float128(string)
+        except Exception:
+            return fail;
 
 def skip_na(key, value):
     skip = (not value or value == "NA")
@@ -20,18 +27,18 @@ def skip_non_rsid_value(key, value):
 def dot_to_na(value):
     return "NA" if value == "." else value
 
-def load_data(path, key_name, value_name, white_list=None, value_white_list=None, numeric=False, should_skip=None, value_conversion=None, key_filter=None):
+def load_data(path, key_name, value_name, white_list=None, value_white_list=None, numeric=False, should_skip=None, value_conversion=None, key_filter=None, sep=None, float128=False):
     data = {}
     c_key=None
     c_value=None
     for i, line in enumerate(Utilities.generate_from_any_plain_file(path)):
         if i==0:
-            header = line.strip().split()
+            header = line.strip().split(sep)
             c_key = header.index(key_name)
             c_value = header.index(value_name)
             continue
 
-        comps = line.strip().split()
+        comps = line.strip().split(sep)
         key = comps[c_key]
         if white_list and not key in white_list:
             continue
@@ -49,6 +56,8 @@ def load_data(path, key_name, value_name, white_list=None, value_white_list=None
             value = value_conversion(value)
         elif numeric:
             value = try_parse(value)
+        elif float128:
+            value = try_parse(value, float128=True)
 
         if value:
             data[key] = value

@@ -64,8 +64,9 @@ def run(args):
             w = float(numpy.dot(numpy.dot(zscores, inv), zscores))
             chi2_p = stats.chi2.sf(w, n_indep)
             tmi = numpy.trace(numpy.dot(transcriptome_correlation, inv))
-        except:
+        except Exception as e:
             #TODO: improve error tracking
+            logging.log(8, "{} Exception: {}".format(group_name, str(e)))
             status = "Error"
         results.append((group_name, chi2_p, n_variants, n_features, n_indep, tmi, status))
     results = pandas.DataFrame(results, columns=["group", "pvalue", "n_variants", "n_features", "n_indep", "tmi", "status"])
