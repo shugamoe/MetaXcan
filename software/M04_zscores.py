@@ -27,6 +27,9 @@ def run_metaxcan(args, context):
     results = []
     additional = []
     for i,gene in enumerate(i_genes):
+        # if gene in ["P12821", "Q5U4P2"]:
+        #     import pdb
+        #     pdb.set_trace()
         if args.MAX_R and i+1>args.MAX_R:
             logging.log("Early exit condition met")
             break
@@ -43,6 +46,9 @@ def run_metaxcan(args, context):
 
     results = AssociationCalculation.dataframe_from_results(results)
     results = MetaxcanUtilities.format_output(results, context, args.remove_ens_version)
+
+    if len(results) == 0:
+        logging.log(10, "No results. Probably no intersection for this tissue. Expect an error soon.")
 
     if args.additional_output:
         additional = AssociationCalculation.dataframe_from_aditional_stats(additional)

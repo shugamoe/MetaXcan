@@ -53,7 +53,6 @@ class Context(object):
     def get_model_info(self): pass
 
 def association(gene, context, return_snps=False):
-    #capture context
     n_snps_in_model, i, cov, snps = context.provide_calculation(gene)
 
     if logging.getLogger().getEffectiveLevel() < 10:
@@ -86,6 +85,16 @@ def association(gene, context, return_snps=False):
             except Exception as e:
                 logging.log(9, "Unexpected exception when calculating zscore: %s, %s", gene, str(e))
 
+    #capture context
+    # if gene in ["P12821", "Q5U4P2"]:
+        # import pdb
+        # print("In association")
+        # print(gene)
+        # print(i_zscore)
+        # print(i_weight)
+        # pdb.set_trace()
+        # Example of by hand stuff I'd do
+        # !np.savetxt("../inspect/breakdowns/ASPHD1.Q5U4P2.FUSION.Jansen.zscore.txt", i_zscore,header=" ".join(snps))
     r = (gene, zscore, effect_size, sigma_g_2, n_snps_in_model, n_snps_in_cov, n_snps_used)
 
     if return_snps:
@@ -105,6 +114,10 @@ def dataframe_from_results(results):
 def additional_stats(gene, context):
     #capture context
     n_snps_in_model, i, cov, snps = context.provide_calculation(gene)
+    # if gene in ["P12821", "Q5U4P2"]:
+    #     import pdb
+    #     print("In additional_stats")
+    #     pdb.set_trace()
 
     #some stats
     snps_used = i[Constants.SNP]
