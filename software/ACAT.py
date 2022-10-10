@@ -25,6 +25,7 @@ def run(args):
     for key in group_keys:
         group = [x for x in groups[key] if x in associations]
         p = numpy.array([associations[x] for x in group if associations[x] != "NA" and not numpy.isnan(associations[x])], dtype=numpy.float128)
+        p = numpy.array([x if x != 1 else 1-1e-5 for x in p], dtype=numpy.float128)
         if len(p) == 0:
             continue
         s = numpy.sum(numpy.tan((0.5 - p) * numpy.pi))
