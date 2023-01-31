@@ -72,6 +72,10 @@ def load_data_from_assoc(args, key_name, value_name,
         white_list=None, value_white_list=None, numeric=True,
         should_skip=None, value_conversion=None, key_filter=None, sep=None,
         float128=False):
+    if args.tiss_list is not None:
+        tiss_list = pandas.read_csv(args.tiss_list, header=None)[0].tolist()
+        print("Tissue list.")
+        print(tiss_list)
     if args.associations:
         return(load_data(args.associations[0], key_name, value_name, sep=sep, numeric=numeric))
 

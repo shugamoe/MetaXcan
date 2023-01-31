@@ -93,6 +93,11 @@ def get_associations_from_multiple(args):
     else:
         raise Exceptions.InvalidArguments("Need a way to identify which association file is with which tissue")
 
+    if args.tiss_list is not None:
+        tiss_list = pandas.read_csv(args.tiss_list, header=None)[0].tolist()
+        print("Tissue list.")
+        print(tiss_list)
+
     associations = {}
     files = BUtilities.contentsWithRegexpFromFolder(args.associations_folder, file_regexp)
     for assoc_file in files:

@@ -23,7 +23,7 @@ def run(args):
 
     Utilities.ensure_requisite_folders(args.output)
     if args.gene_whitelist:
-        gene_whitelist = pandas.read_table(args.gene_whitelist[0], usecols=[args.gene_whitelist[1]])[args.gene_whitelist[1]].to_list()
+        gene_whitelist = pandas.read_csv(args.gene_whitelist[0], usecols=[args.gene_whitelist[1]])[args.gene_whitelist[1]].to_list()
     logging.info("Acquiring gwas-variant intersection")
     model, intersection = GWASAndModels.model_and_intersection_with_gwas_from_args(args)
     model_structure = JointAnalysis2.build_model_structure(model, intersection)
@@ -52,10 +52,13 @@ def run(args):
         logging.info(f"Imputation Ranges Loaded | {datetime.now()}")
 
     results = []
+    from_whitelist = 0
     for i, group_name in enumerate(group_keys):
         if args.gene_whitelist:
             if group_name not in gene_whitelist:
                 continue
+            else:
+                from_whitelist += 1
         reporter.update(i+1, "processed %d %% of groups")
         if args.MAX_M and  i>args.MAX_M-1:
             logging.info("Early abort")
@@ -89,6 +92,11 @@ def run(args):
 		# have effect_size, standard error)
                 gene_df_imp_snps = cojo_ma_df[cojo_ma_df['effect_size'].isna()].merge(gene_df, on="chromosome_position")
                 gene_df_og_snps = cojo_ma_df.dropna().merge(gene_df, on="chromosome_position")
+
+                ofile = "{}{}.snplist".format(args.snp_list_prefix, group_name)
+                gene_df_og_snps[['chromosome_position']].to_csv(ofile, header=False, index=False)
+                results.append((group_name, ofile))
+                continue # Don't get imputed SNPs anymore
                 
                 if len(gene_df_imp_snps) == 0: # All SNPs for the introns for a gene are original SNPs
                     ofile = "{}{}.snplist".format(args.snp_list_prefix, group_name)
@@ -140,6 +148,7 @@ def run(args):
 
     logging.info("Saving results")
     Utilities.save_dataframe(results, args.output)
+    logging.info(f"{from_whitelist} whitelisted genes were found.")
 
     end = timer()
     logging.info("Successfully wrote SNP lists for genes in %s seconds" % (str(end - start)))
